@@ -3,24 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Memory Game</title>
+  <title>Avengers Memory Game</title>
   <link href="./bootstrap-5.3.8-dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="./style.css" rel="stylesheet">
 </head>
-<body class="d-flex flex-column justify-content-center align-items-center vh-100 text-white">
-    <h1 class="text-white mb-4">Avengers Memory Game</h1>
-    <br>
-  <div class="container mt-4 text-center">
+<body>
+  <main class="game-shell">
+    <h1 class="game-title">Avengers <span>Memory</span> Game</h1>
 
-    <div class="progress mb-3" >
-      <div class="progress-bar bg-success progress-bar-animated" role="progressbar" aria-label="Animated striped example" style="width: 0%">0%</div>
+    <section class="game-panel" aria-label="Memory game">
+      <div class="stats" role="group" aria-label="Game stats">
+        <div class="stat"><span class="stat-value" id="moves">0</span><span class="stat-label">Moves</span></div>
+        <div class="stat"><span class="stat-value" id="timer">0:00</span><span class="stat-label">Time</span></div>
+        <div class="stat"><span class="stat-value" id="best">–</span><span class="stat-label">Best (moves)</span></div>
+      </div>
+
+      <div class="progress" role="progressbar" aria-label="Matched pairs"
+           aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" style="width: 0%">0%</div>
+      </div>
+
+      <div id="gameBoard" class="game-board"></div>
+
+      <div class="controls">
+        <button id="restartBtn" class="btn btn-restart" type="button">Restart</button>
+        <button id="muteBtn" class="btn btn-sound" type="button" aria-pressed="false">Sound on</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal fade" id="winModal" tabindex="-1" aria-labelledby="winTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content win-modal">
+        <div class="modal-body text-center">
+          <h2 id="winTitle">Avengers assembled!</h2>
+          <p class="mb-1">You matched every pair in <strong id="winMoves">0</strong> moves and <strong id="winTime">0:00</strong>.</p>
+          <p class="win-record" id="winRecord"></p>
+          <button type="button" class="btn btn-restart" id="playAgainBtn">Play again</button>
+        </div>
+      </div>
     </div>
-
-
-    <div id="gameBoard" class="game-board"></div>
-
-
-    <button id="restartBtn" class="btn btn-dark mt-3">Restart</button>
   </div>
 
   <script src="./bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
