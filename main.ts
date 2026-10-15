@@ -24,6 +24,10 @@ const gameOverSound = new Audio("./assets/audio/game-over.mp3");
 const backgroundSound = new Audio("./assets/audio/fulltrack.mp3");
 backgroundSound.loop = true;
 backgroundSound.volume = 0.3;
+backgroundSound.preload = "auto";
+backgroundSound.addEventListener("error", () => {
+  console.warn("Background music failed to load. Check that ./assets/audio/fulltrack.mp3 exists and is a valid mp3.");
+});
 
 let muted = readStorage(MUTE_KEY) === "1";
 
@@ -39,10 +43,36 @@ function playSound(sound: HTMLAudioElement): void {
   sound.currentTime = 0;
   sound.play().catch(() => { /* blocked or missing file: ignore */ });
 }
+// musicWanted = "the game wants music right now" (true during play, false after a win).
+// It lets us resume correctly after unmuting or returning to the tab.
+let musicWanted = false;
+
 function startMusic(): void {
+  musicWanted = true;
   if (muted || !backgroundSound.paused) return;
-  backgroundSound.play().catch(() => {});
+  backgroundSound.play().catch((err) => console.warn("Background music could not play:", err));
 }
+function stopMusic(reset = false): void {
+  musicWanted = false;
+  backgroundSound.pause();
+  if (reset) backgroundSound.currentTime = 0;
+}
+
+// Browsers only allow audio after a user gesture, so start the music on the first
+// click, tap or key press anywhere on the page, not only on a card.
+function unlockAudio(): void {
+  startMusic();
+  document.removeEventListener("pointerdown", unlockAudio);
+  document.removeEventListener("keydown", unlockAudio);
+}
+document.addEventListener("pointerdown", unlockAudio);
+document.addEventListener("keydown", unlockAudio);
+
+// Pause when the tab is hidden, resume when it comes back.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) backgroundSound.pause();
+  else if (musicWanted && !muted) backgroundSound.play().catch(() => {});
+});
 
 // ---------- State ----------
 let cards: Card[] = [];
@@ -112,8 +142,6 @@ function initGame(): void {
     }))
   );
 
-  backgroundSound.pause();
-  backgroundSound.currentTime = 0;
   updateProgress();
   buildBoard();
 }
@@ -148,7 +176,7 @@ function flipCard(card: Card): void {
   if (lockBoard || gameOver || card.flipped || card.matched) return;
 
   if (!timerId) startTimer();
-  startMusic();
+  if (!musicWanted) startMusic();
 
   setFlipped(card, true);
   playSound(flipSound);
@@ -212,7 +240,7 @@ function endGame(): void {
   const elapsed = Date.now() - startTime;
   stopTimer();
   timerEl.textContent = formatTime(elapsed);
-  backgroundSound.pause();
+  stopMusic(true);
   playSound(gameOverSound);
 
   const best = getBest();
@@ -253,14 +281,18 @@ muteBtn.addEventListener("click", () => {
   muted = !muted;
   writeStorage(MUTE_KEY, muted ? "1" : "0");
   if (muted) backgroundSound.pause();
-  else if (timerId) startMusic();
+  else if (musicWanted) startMusic();
   updateMuteButton();
 });
 
-restartBtn.addEventListener("click", initGame);
+restartBtn.addEventListener("click", () => {
+  initGame();
+  startMusic(); // keeps playing if it already is, restarts it after a win
+});
 playAgainBtn.addEventListener("click", () => {
   winModal.hide();
   initGame();
+  startMusic();
 });
 
 // Preload images so cards never flash blank when first flipped
